@@ -26,5 +26,5 @@ def handle(req):
 
     # Function to validate the HMAC
     if validateHMAC(req, payloadSecret, messageMAC):
-        return "Successfully validated: " + req
+        return f"Successfully validated: {req}"
     return "HMAC validation failed."

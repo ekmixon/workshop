@@ -4,8 +4,8 @@ from github import Github
 def handle(req):
     event_header = os.getenv("Http_X_Github_Event")
 
-    if not event_header == "issues":
-        print("Unable to handle X-GitHub-Event: " + event_header)
+    if event_header != "issues":
+        print(f"Unable to handle X-GitHub-Event: {event_header}")
         sys.exit(1)
         return
 
@@ -13,14 +13,17 @@ def handle(req):
 
     payload = json.loads(req)
 
-    if not payload["action"] == "opened":
+    if payload["action"] != "opened":
         print("Action not supported: " + payload["action"])
         sys.exit(1)
         return
 
     # Call sentimentanalysis
-    res = requests.post('http://' + gateway_hostname + ':8080/function/sentimentanalysis', 
-                        data= payload["issue"]["title"]+" "+payload["issue"]["body"])
+    res = requests.post(
+        f'http://{gateway_hostname}:8080/function/sentimentanalysis',
+        data=payload["issue"]["title"] + " " + payload["issue"]["body"],
+    )
+
 
     if res.status_code != 200:
         print("Error with sentimentanalysis, expected: %d, got: %d\n" % (200, res.status_code))
@@ -43,7 +46,7 @@ def apply_label(polarity, issue_number, repo, positive_threshold):
 
     with open("/var/openfaas/secrets/auth-token","r") as authToken:
         g = Github(authToken.read())
-    
+
     repo = g.get_repo(repo)
     issue = repo.get_issue(issue_number)
 
@@ -52,7 +55,7 @@ def apply_label(polarity, issue_number, repo, positive_threshold):
     for label in issue.labels:
         if label == "positive":
             has_label_positive = True
-        if label == "review":
+        elif label == "review":
             has_label_review = True
 
     if polarity > positive_threshold and not has_label_positive:
